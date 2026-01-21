@@ -24,6 +24,12 @@ const Login = ({ isRegister = false }) => {
     setError('');
     setSuccess('');
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.username)) {
+        setError("Please enter a valid email address.");
+        return;
+    }
+
     if (isRegister) {
         if (formData.password.length < 6) {
             setError("Password must be at least 6 characters long.");
@@ -94,7 +100,7 @@ const Login = ({ isRegister = false }) => {
 
       <form className="auth-form" onSubmit={handleSubmit}>
         <input 
-          type="text" placeholder="Username" required
+          type="email" placeholder="Email" required
           value={formData.username}
           onChange={e => setFormData({...formData, username: e.target.value})}
           style={{width: "94.5%"}}
