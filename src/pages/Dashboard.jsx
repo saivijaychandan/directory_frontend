@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import api from '../api';
+import folderService from '../services/folderService';
+
 
 const Dashboard = () => {
   const [folders, setFolders] = useState([]);
@@ -8,59 +9,67 @@ const Dashboard = () => {
   const username = localStorage.getItem('username');
   const FOLDER_ICON_URL = "https://cdn-icons-png.flaticon.com/512/3767/3767084.png";
 
-  // --- STATES FOR MODALS ---
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
 
-  // Stores the ID of the folder we want to delete. If null, modal is closed.
   const [deleteId, setDeleteId] = useState(null);
 
-  // Stores data for renaming: { isOpen: true, id: '123', name: 'OldName' }
   const [renameData, setRenameData] = useState({ isOpen: false, id: null, name: '' });
+  
+  const [isLoading, setIsLoading] = useState(true);
 
-
-  useEffect(() => { fetchFolders(); }, []);
-
-  const fetchFolders = async () => {
+  const fetchFolders = useCallback(async () => {
     try {
-      const res = await api.get('/folders');
+      setFolders(prev => {
+         if(prev.length === 0) setIsLoading(true); 
+         return prev;
+      });
+      
+      const res = await folderService.getAllFolders();
       setFolders(res.data);
-    } catch (err) { alert("Failed to load folders"); }
-  };
+    } catch (err) { 
+      alert("Failed to load folders"); 
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-  // --- ACTIONS ---
+  useEffect(() => { fetchFolders(); }, [fetchFolders]);
 
-  // 1. Create
   const handleCreate = async () => {
     if (!newFolderName) return;
     try {
-      await api.post('/folders', { name: newFolderName });
+      await folderService.createFolder(newFolderName);
       setNewFolderName('');
       setCreateModalOpen(false);
       fetchFolders();
     } catch (err) { alert("Error creating folder"); }
   };
 
-  // 2. Delete
   const confirmDelete = async () => {
     if (!deleteId) return;
     try {
-      await api.delete(`/folders/${deleteId}`);
-      setDeleteId(null); // Close Modal
+      await folderService.deleteFolder(deleteId);
+      setDeleteId(null);
       fetchFolders();
     } catch (err) { alert("Error deleting"); }
   };
 
-  // 3. Rename
   const confirmRename = async () => {
     if (!renameData.name) return;
     try {
-      await api.put(`/folders/${renameData.id}`, { name: renameData.name });
-      setRenameData({ isOpen: false, id: null, name: '' }); // Close Modal
+      await folderService.renameFolder(renameData.id, renameData.name);
       fetchFolders();
     } catch (err) { alert("Rename failed"); }
   };
 
+  if (isLoading) {
+    return (
+      <div className="loader-container">
+        <div className="spinner"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="app-container">
@@ -82,7 +91,7 @@ const Dashboard = () => {
           <Link to={`/folder/${folder._id}`} key={folder._id} style={{ textDecoration: 'none' }}>
             <div className="folder-card">
               <img src={FOLDER_ICON_URL} alt="folder" className="folder-icon-img" style={{width:90}}/>
-              <div className="folder-name">{folder.name}</div>
+              <div className="folder-name truncate-text">{folder.name}</div>
               
               <div className="card-actions">
                 <button className="secondary" onClick={(e) => {
@@ -100,7 +109,6 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {/* --- CREATE MODAL --- */}
       {createModalOpen && (
         <div className="modal-overlay" onClick={() => setCreateModalOpen(false)}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -118,7 +126,6 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* --- RENAME MODAL --- */}
       {renameData.isOpen && (
         <div className="modal-overlay" onClick={() => setRenameData({...renameData, isOpen: false})}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -137,7 +144,6 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* --- DELETE CONFIRMATION MODAL --- */}
       {deleteId && (
         <div className="modal-overlay" onClick={() => setDeleteId(null)}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>

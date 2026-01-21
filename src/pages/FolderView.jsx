@@ -1,121 +1,158 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'; // 1. Added useCallback
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import api from '../api';
+import imageService from '../services/imageService';
+import folderService from '../services/folderService';
+import { FaArrowLeft } from 'react-icons/fa'
+
 import ImageCard from '../components/ImageCard';
+import UploadButton from '../components/UploadButton';
+import TransferModal from '../components/modals/TransferModal';
+import ViewImageModal from '../components/modals/ViewImageModal';
+import RenameModal from '../components/modals/RenameModal';
+import DeleteModal from '../components/modals/DeleteModal';
+import StatusModal from '../components/modals/StatusModal';
 
 const FolderView = () => {
   const { folderId } = useParams();
+  
   const [images, setImages] = useState([]);
-  const fileInputRef = useRef(null);
+  const [allFolders, setAllFolders] = useState([]);
+  const [folderName, setFolderName] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
-  // --- STATES FOR MODALS ---
+  const [viewImage, setViewImage] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
   const [renameData, setRenameData] = useState({ isOpen: false, id: null, name: '' });
+  const [statusModal, setStatusModal] = useState({ isOpen: false, type: 'success', message: '' });
+  const [transferData, setTransferData] = useState({ isOpen: false, mode: 'copy', imageId: null, targetFolderId: '' });
 
-  // 2. FIXED: Define this OUTSIDE so everyone can use it
-  // We use useCallback to prevent infinite loops in useEffect
-  const fetchImages = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     try {
-      const res = await api.get(`/folders/${folderId}/images`);
-      setImages(res.data);
-    } catch (err) { console.error(err); }
-  }, [folderId]);
+      if (images.length === 0) setIsLoading(true);
+      const [folderRes, imagesRes, allFoldersRes] = await Promise.all([
+        folderService.getFolderDetails(folderId),
+        imageService.getImagesInFolder(folderId),
+        folderService.getAllFolders()
+      ]);
+      setFolderName(folderRes.data.name);
+      setImages(imagesRes.data);
+      setAllFolders(allFoldersRes.data);
+    } catch (err) { console.error(err); } 
+    finally { setIsLoading(false); }
+  }, [folderId, images.length]);
 
-  // 3. FIXED: Now useEffect just calls the shared function
-  useEffect(() => {
-    fetchImages(); 
-  }, [fetchImages]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
-  const handleFileSelect = async (e) => {
-    const selectedFile = e.target.files[0];
-    if (!selectedFile) return;
-    const formData = new FormData();
-    formData.append('imageFile', selectedFile);
-    formData.append('folderId', folderId);
+  const handleUpload = async (file) => {
     try {
-      await api.post('/images', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-      fetchImages(); // 4. Now this works!
-    } catch (err) { alert("Upload failed"); } 
-    finally { if (fileInputRef.current) fileInputRef.current.value = ""; }
+      await imageService.uploadImage(folderId, file);
+      fetchData();
+    } catch (err) { alert("Upload failed"); }
   };
 
-  // --- ACTIONS ---
   const confirmDelete = async () => {
     if (!deleteId) return;
     try {
-      await api.delete(`/images/${deleteId}`);
-      // Optimistic update (faster than fetching again)
-      setImages(images.filter(img => img._id !== deleteId));
+      await imageService.deleteImage(deleteId);
+      setImages(prev => prev.filter(img => img._id !== deleteId));
       setDeleteId(null);
     } catch (err) { alert("Failed"); }
   };
 
   const confirmRename = async () => {
-    if (!renameData.name) return;
     try {
-      await api.put(`/images/${renameData.id}`, { name: renameData.name });
-      fetchImages(); // 5. Now this works too!
+      await imageService.renameImage(renameData.id, renameData.name);
+      fetchData();
       setRenameData({ isOpen: false, id: null, name: '' });
     } catch (err) { alert("Failed"); }
   };
+
+  const confirmTransfer = async () => {
+    if (!transferData.targetFolderId) {
+      setStatusModal({ isOpen: true, type: 'error', message: "Please select a destination." });
+      return;
+    }
+    try {
+      if (transferData.mode === 'copy') {
+        await imageService.copyImage(transferData.imageId, transferData.targetFolderId);
+        setStatusModal({ isOpen: true, type: 'success', message: 'Image Copied!' });
+      } else {
+        await imageService.moveImage(transferData.imageId, transferData.targetFolderId);
+        setStatusModal({ isOpen: true, type: 'success', message: 'Image Moved!' });
+        if (transferData.targetFolderId !== folderId) {
+          setImages(prev => prev.filter(img => img._id !== transferData.imageId));
+        }
+      }
+      setTransferData({ ...transferData, isOpen: false });
+      if (transferData.mode === 'copy' || transferData.targetFolderId === folderId) fetchData();
+    } catch (err) {
+      setStatusModal({ isOpen: true, type: 'error', message: 'Operation Failed' });
+    }
+  };
+
+  if (isLoading) return <div className="loader-container"><div className="spinner"></div></div>;
 
   return (
     <div className="app-container">
       <div className="header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-          <Link to="/" style={{ textDecoration: 'none', fontSize: '24px' }}>⬅️</Link>
-          <h1>Folder Gallery</h1>
+          <Link to="/" style={{ textDecoration: 'none', fontSize: '24px' }}><FaArrowLeft /></Link>
+          <h1>{folderName}</h1>
         </div>
       </div>
 
-      <div style={{ background: 'white', padding: '20px', borderRadius: '10px', marginBottom: '30px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
-        <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileSelect} />
-        <button className="primary" onClick={() => fileInputRef.current.click()}>Upload Photo</button>
-      </div>
+      <UploadButton onUpload={handleUpload} />
 
       <div className="grid-container">
         {images.map(img => (
           <ImageCard 
             key={img._id} 
             img={img} 
+            onView={setViewImage}
             onRename={(image) => setRenameData({ isOpen: true, id: image._id, name: image.name })}
-            onDelete={(id) => setDeleteId(id)}
+            onDelete={setDeleteId}
+            onCopy={(id) => setTransferData({ isOpen: true, mode: 'copy', imageId: id, targetFolderId: folderId })}
+            onMove={(id) => setTransferData({ isOpen: true, mode: 'move', imageId: id, targetFolderId: '' })}
           />
         ))}
       </div>
 
-      {/* --- RENAME MODAL --- */}
-      {renameData.isOpen && (
-        <div className="modal-overlay" onClick={() => setRenameData({...renameData, isOpen: false})}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                <h2>Rename Image</h2>
-                <input 
-                    autoFocus type="text" 
-                    value={renameData.name} 
-                    onChange={(e) => setRenameData({...renameData, name: e.target.value})}
-                    style={{ width: '100%', boxSizing: 'border-box', marginBottom: '15px' }}
-                />
-                <div className="modal-actions">
-                    <button className="secondary" onClick={() => setRenameData({...renameData, isOpen: false})}>Cancel</button>
-                    <button className="primary" onClick={confirmRename}>Save</button>
-                </div>
-            </div>
-        </div>
-      )}
+      <TransferModal 
+        isOpen={transferData.isOpen}
+        onClose={() => setTransferData({ ...transferData, isOpen: false })}
+        mode={transferData.mode}
+        folders={allFolders}
+        currentFolderId={folderId}
+        targetFolderId={transferData.targetFolderId}
+        setTargetFolderId={(id) => setTransferData({ ...transferData, targetFolderId: id })}
+        onConfirm={confirmTransfer}
+      />
 
-      {/* --- DELETE CONFIRMATION MODAL --- */}
-      {deleteId && (
-        <div className="modal-overlay" onClick={() => setDeleteId(null)}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                <h2 style={{color: '#d9534f'}}>Delete Image?</h2>
-                <p>Are you sure you want to delete this image permanently?</p>
-                <div className="modal-actions">
-                    <button className="secondary" onClick={() => setDeleteId(null)}>Cancel</button>
-                    <button className="danger" onClick={confirmDelete}>Yes, Delete</button>
-                </div>
-            </div>
-        </div>
-      )}
+      <ViewImageModal 
+        image={viewImage} 
+        onClose={() => setViewImage(null)} 
+      />
+
+      <RenameModal 
+        isOpen={renameData.isOpen}
+        onClose={() => setRenameData({ ...renameData, isOpen: false })}
+        name={renameData.name}
+        setName={(name) => setRenameData({ ...renameData, name })}
+        onConfirm={confirmRename}
+      />
+
+      <DeleteModal 
+        isOpen={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={confirmDelete}
+      />
+
+      <StatusModal 
+        isOpen={statusModal.isOpen}
+        onClose={() => setStatusModal({ ...statusModal, isOpen: false })}
+        type={statusModal.type}
+        message={statusModal.message}
+      />
     </div>
   );
 };
