@@ -3,17 +3,26 @@ import useAuthStore from '../store/authStore';
 import { Link, useNavigate } from 'react-router-dom';
 import folderService from '../services/folderService';
 import useThemeStore from '../store/themeStore';
-import { FiSun, FiMoon } from 'react-icons/fi'
+import { FiSun, FiMoon } from 'react-icons/fi';
+import CreateModal from '../components/modals/CreateModal';
+import RenameModal from '../components/modals/RenameModal';
+import DeleteModal from '../components/modals/DeleteModal';
 
 const Dashboard = () => {
   const { theme, toggleTheme } = useThemeStore();
+
   const token = useAuthStore((state) => state.token);
+
   const user = useAuthStore((state) => state.user);
+
   const [folders, setFolders] = useState([]);
+
   const navigate = useNavigate();
+
   const FOLDER_ICON_URL = "https://cdn-icons-png.flaticon.com/512/3767/3767084.png";
 
   const [createModalOpen, setCreateModalOpen] = useState(false);
+
   const [newFolderName, setNewFolderName] = useState('');
 
   const [deleteId, setDeleteId] = useState(null);
@@ -147,77 +156,28 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {createModalOpen && (
-        <div className="modal-overlay" onClick={() => {
-            setCreateModalOpen(false);
-            setCreateError('');
-        }}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                <h2>Create New Folder</h2>
-                
-                <input 
-                    autoFocus 
-                    type="text" 
-                    placeholder="Folder Name" 
-                    value={newFolderName} 
-                    onChange={(e) => {
-                        setNewFolderName(e.target.value);
-                        setCreateError('');
-                    }}
-                    style={{ 
-                        width: '100%', 
-                        boxSizing: 'border-box', 
-                        marginBottom: createError ? '10px' : '15px',
-                        border: createError ? '1px solid red' : '1px solid #ccc'
-                    }}
-                />
-                {createError && (
-                    <div style={{ color: '#d9534f', fontSize: '14px', marginBottom: '15px' }}>
-                        {createError}
-                    </div>
-                )}
-                <div className="modal-actions">
-                    <button className="secondary" onClick={() => {
-                        setCreateModalOpen(false);
-                        setCreateError('');
-                    }}>Cancel</button>
-                    <button className="primary" onClick={handleCreate}>Create</button>
-                </div>
-            </div>
-        </div>
-      )}
+      <CreateModal 
+        isOpen={createModalOpen}
+        onClose={() => { setCreateModalOpen(false); setCreateError(''); }}
+        name={newFolderName}
+        setName={(val) => { setNewFolderName(val); setCreateError(''); }}
+        onConfirm={handleCreate}
+        error={createError}
+      />
 
-      {renameData.isOpen && (
-        <div className="modal-overlay" onClick={() => setRenameData({...renameData, isOpen: false})}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                <h2>Rename Folder</h2>
-                <input 
-                    autoFocus type="text" 
-                    value={renameData.name} 
-                    onChange={(e) => setRenameData({...renameData, name: e.target.value})}
-                    style={{ width: '100%', boxSizing: 'border-box', marginBottom: '15px' }}
-                />
-                <div className="modal-actions">
-                    <button className="secondary" onClick={() => setRenameData({...renameData, isOpen: false})}>Cancel</button>
-                    <button className="primary" onClick={confirmRename}>Save</button>
-                </div>
-            </div>
-        </div>
-      )}
+      <RenameModal 
+        isOpen={renameData.isOpen}
+        onClose={() => setRenameData({ ...renameData, isOpen: false })}
+        name={renameData.name}
+        setName={(name) => setRenameData({ ...renameData, name })}
+        onConfirm={confirmRename}
+      />
 
-      {deleteId && (
-        <div className="modal-overlay" onClick={() => setDeleteId(null)}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                <h2 style={{color: '#d9534f'}}>Are you sure?</h2>
-                <p>Do you really want to delete this folder? All contents will be lost.</p>
-                <div className="modal-actions">
-                    <button className="secondary" onClick={() => setDeleteId(null)}>Cancel</button>
-                    <button className="danger" onClick={confirmDelete}>Yes, Delete</button>
-                </div>
-            </div>
-        </div>
-      )}
-
+      <DeleteModal 
+        isOpen={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 };

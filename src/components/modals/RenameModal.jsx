@@ -6,7 +6,7 @@ const RenameModal = ({ isOpen, onClose, name, setName, onConfirm }) => {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <h2>Rename Image</h2>
+        <h2 style={{marginBottom: '15px'}}>Rename</h2>
         <input 
           autoFocus 
           type="text" 

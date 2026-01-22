@@ -6,8 +6,8 @@ const DeleteModal = ({ isOpen, onClose, onConfirm }) => {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <h2 style={{ color: '#d9534f' }}>Delete Image?</h2>
-        <p>Are you sure you want to delete this image permanently?</p>
+        <h2 style={{ color: '#d9534f' }}>Delete?</h2>
+        <p>Are you sure you want to delete this permanently?</p>
         <div className="modal-actions">
           <button className="secondary" onClick={onClose}>Cancel</button>
           <button className="danger" onClick={onConfirm}>Yes, Delete</button>
