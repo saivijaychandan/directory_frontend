@@ -7,7 +7,6 @@ const UploadButton = ({ onUpload }) => {
     const file = e.target.files[0];
     if (file) {
       onUpload(file);
-      // Reset the value so the same file can be selected again if needed
       fileInputRef.current.value = ""; 
     }
   };

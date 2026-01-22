@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import folderService from '../services/folderService';
 
-
 const Dashboard = () => {
   const [folders, setFolders] = useState([]);
   const navigate = useNavigate();
