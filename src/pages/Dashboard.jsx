@@ -2,8 +2,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import useAuthStore from '../store/authStore';
 import { Link, useNavigate } from 'react-router-dom';
 import folderService from '../services/folderService';
+import useThemeStore from '../store/themeStore';
+import { FiSun, FiMoon } from 'react-icons/fi'
 
 const Dashboard = () => {
+  const { theme, toggleTheme } = useThemeStore();
   const token = useAuthStore((state) => state.token);
   const user = useAuthStore((state) => state.user);
   const [folders, setFolders] = useState([]);
@@ -88,6 +91,24 @@ const Dashboard = () => {
     <div className="app-container">
       <div className="header">
         <h1>My Drive</h1>
+        <div style={{ marginLeft: '55%', display: 'flex', alignItems: 'center', gap: '15px' }}></div>
+        <button 
+                onClick={toggleTheme}
+                style={{
+                    background: 'transparent',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '50%',
+                    width: '50px',
+                    height: '50px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    color: 'var(--text-primary)'
+                }}
+            >
+                {theme === 'light' ? <FiMoon size={20} /> : <FiSun size={20} />}
+            </button>
         <h1 style={{marginLeft: 'auto', marginRight: '20px', fontSize: '18px'}}>Welcome, {user?.username}</h1>
         <button className="danger" onClick={() => {
           localStorage.removeItem('token');
@@ -114,8 +135,8 @@ const Dashboard = () => {
                 <button className="secondary" onClick={(e) => {
                     e.preventDefault();
                     setRenameData({ isOpen: true, id: folder._id, name: folder.name });
-                }}>Edit</button>
-                
+                }}>Rename</button>
+
                 <button className="danger" onClick={(e) => {
                     e.preventDefault();
                     setDeleteId(folder._id);

@@ -13,7 +13,7 @@ const UploadButton = ({ onUpload }) => {
 
   return (
     <div style={{ 
-      background: 'white', 
+      background: 'transparent', 
       padding: '20px', 
       borderRadius: '10px', 
       marginBottom: '30px', 

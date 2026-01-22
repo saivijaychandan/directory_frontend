@@ -4,8 +4,16 @@ import Dashboard from './pages/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css'
 import FolderView from './pages/FolderView';
+import useThemeStore from './store/themeStore';
+import { useEffect } from 'react';
 
 function App() {
+  const theme = useThemeStore((state) => state.theme)
+
+  useEffect(()=>{
+    document.documentElement.setAttribute('data-theme',theme);
+  },[theme]);
+  
   return (
     <Router>
       <Routes>
