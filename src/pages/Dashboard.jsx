@@ -14,7 +14,7 @@ const Dashboard = () => {
   const [deleteId, setDeleteId] = useState(null);
 
   const [renameData, setRenameData] = useState({ isOpen: false, id: null, name: '' });
-  
+
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchFolders = useCallback(async () => {
@@ -23,7 +23,6 @@ const Dashboard = () => {
          if(prev.length === 0) setIsLoading(true); 
          return prev;
       });
-      
       const res = await folderService.getAllFolders();
       setFolders(res.data);
     } catch (err) { 
@@ -58,6 +57,7 @@ const Dashboard = () => {
     if (!renameData.name) return;
     try {
       await folderService.renameFolder(renameData.id, renameData.name);
+      setRenameData(prev => ({...prev, isOpen: false}))
       fetchFolders();
     } catch (err) { alert("Rename failed"); }
   };
