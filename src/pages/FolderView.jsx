@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import useAuthStore from '../store/authStore';
 import imageService from '../services/imageService';
 import folderService from '../services/folderService';
-import { FaArrowLeft } from 'react-icons/fa'
+import { FaArrowLeft } from 'react-icons/fa';
 
 import ImageCard from '../components/ImageCard';
 import UploadButton from '../components/UploadButton';
@@ -13,8 +14,11 @@ import DeleteModal from '../components/modals/DeleteModal';
 import StatusModal from '../components/modals/StatusModal';
 
 const FolderView = () => {
-  const { folderId } = useParams();
-  
+  const { idOrName } = useParams(); 
+  const token = useAuthStore((state) => state.token);
+
+  const [currentFolderId, setCurrentFolderId] = useState(null);
+
   const [images, setImages] = useState([]);
   const [allFolders, setAllFolders] = useState([]);
   const [folderName, setFolderName] = useState('');
@@ -23,48 +27,74 @@ const FolderView = () => {
   const [viewImage, setViewImage] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
   const [renameData, setRenameData] = useState({ isOpen: false, id: null, name: '' });
+  const [renameError, setRenameError] = useState('');
   const [statusModal, setStatusModal] = useState({ isOpen: false, type: 'success', message: '' });
   const [transferData, setTransferData] = useState({ isOpen: false, mode: 'copy', imageId: null, targetFolderId: '' });
 
   const fetchData = useCallback(async () => {
+    if (!token || !idOrName) return;
+
     try {
       if (images.length === 0) setIsLoading(true);
-      const [folderRes, imagesRes, allFoldersRes] = await Promise.all([
-        folderService.getFolderDetails(folderId),
-        imageService.getImagesInFolder(folderId),
-        folderService.getAllFolders()
+
+      const folderRes = await folderService.getFolderDetails(idOrName);
+      const folderData = folderRes.data;
+
+      const realId = folderData._id;
+      setCurrentFolderId(realId);
+      setFolderName(folderData.name);
+
+      const [imagesRes, allFoldersRes] = await Promise.all([
+        imageService.getImagesInFolder(realId, token),
+        folderService.getAllFolders(token)
       ]);
-      setFolderName(folderRes.data.name);
+
       setImages(imagesRes.data);
       setAllFolders(allFoldersRes.data);
-    } catch (err) { console.error(err); } 
-    finally { setIsLoading(false); }
-  }, [folderId, images.length]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+    } catch (err) { 
+        console.error(err); 
+    } finally { 
+        setIsLoading(false); 
+    }
+  }, [idOrName, token, images.length]);
+
+  useEffect(() => { 
+      fetchData(); 
+  }, [fetchData]);
 
   const handleUpload = async (file) => {
+    if (!currentFolderId) return;
+
     try {
-      await imageService.uploadImage(folderId, file);
+      await imageService.uploadImage(currentFolderId, file, token);
       fetchData();
-    } catch (err) { alert("Upload failed"); }
+    } catch (err) { 
+      const msg = err.response?.data?.msg || "Upload failed";
+      setStatusModal({ isOpen: true, type: 'error', message: msg });
+    }
   };
 
+  
   const confirmDelete = async () => {
     if (!deleteId) return;
     try {
       await imageService.deleteImage(deleteId);
       setImages(prev => prev.filter(img => img._id !== deleteId));
       setDeleteId(null);
-    } catch (err) { alert("Failed"); }
+    } catch (err) { alert("Failed to delete"); }
   };
 
   const confirmRename = async () => {
+    setRenameError('');
     try {
       await imageService.renameImage(renameData.id, renameData.name);
       fetchData();
       setRenameData({ isOpen: false, id: null, name: '' });
-    } catch (err) { alert("Failed"); }
+    } catch (err) { 
+      const msg = err.response?.data?.msg || "Rename failed";
+      setRenameError(msg);
+    }
   };
 
   const confirmTransfer = async () => {
@@ -79,12 +109,14 @@ const FolderView = () => {
       } else {
         await imageService.moveImage(transferData.imageId, transferData.targetFolderId);
         setStatusModal({ isOpen: true, type: 'success', message: 'Image Moved!' });
-        if (transferData.targetFolderId !== folderId) {
+        
+        if (transferData.targetFolderId !== currentFolderId) {
           setImages(prev => prev.filter(img => img._id !== transferData.imageId));
         }
       }
       setTransferData({ ...transferData, isOpen: false });
-      if (transferData.mode === 'copy' || transferData.targetFolderId === folderId) fetchData();
+      
+      if (transferData.mode === 'copy' || transferData.targetFolderId === currentFolderId) fetchData();
     } catch (err) {
       setStatusModal({ isOpen: true, type: 'error', message: 'Operation Failed' });
     }
@@ -111,10 +143,15 @@ const FolderView = () => {
             onView={setViewImage}
             onRename={(image) => setRenameData({ isOpen: true, id: image._id, name: image.name })}
             onDelete={setDeleteId}
-            onCopy={(id) => setTransferData({ isOpen: true, mode: 'copy', imageId: id, targetFolderId: folderId })}
+            onCopy={(id) => setTransferData({ isOpen: true, mode: 'copy', imageId: id, targetFolderId: currentFolderId })}
             onMove={(id) => setTransferData({ isOpen: true, mode: 'move', imageId: id, targetFolderId: '' })}
           />
         ))}
+        {images.length === 0 && (
+            <div style={{color:'#777', fontStyle:'italic', marginTop:'20px'}}>
+                This folder is empty. Upload an image to get started.
+            </div>
+        )}
       </div>
 
       <TransferModal 
@@ -122,12 +159,12 @@ const FolderView = () => {
         onClose={() => setTransferData({ ...transferData, isOpen: false })}
         mode={transferData.mode}
         folders={allFolders}
-        currentFolderId={folderId}
+        currentFolderId={currentFolderId} 
         targetFolderId={transferData.targetFolderId}
         setTargetFolderId={(id) => setTransferData({ ...transferData, targetFolderId: id })}
         onConfirm={confirmTransfer}
       />
-
+      
       <ViewImageModal 
         image={viewImage} 
         onClose={() => setViewImage(null)} 
@@ -135,10 +172,11 @@ const FolderView = () => {
 
       <RenameModal 
         isOpen={renameData.isOpen}
-        onClose={() => setRenameData({ ...renameData, isOpen: false })}
+        onClose={() => { setRenameData({ ...renameData, isOpen: false }); setRenameError(''); }}
         name={renameData.name}
-        setName={(name) => setRenameData({ ...renameData, name })}
+        setName={(name) => { setRenameData({ ...renameData, name }); setRenameError(''); }}
         onConfirm={confirmRename}
+        error={renameError}
       />
 
       <DeleteModal 

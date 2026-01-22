@@ -1,24 +1,34 @@
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
-import FolderView from './pages/FolderView';
+import ProtectedRoute from './components/ProtectedRoute';
 import './App.css'
-import { AuthProvider } from "./context/AuthContext";
-import ProtectedRoute from "./components/ProtectedRoute";
+import FolderView from './pages/FolderView';
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Login isRegister={true} />} />
-          <Route path="/" element={ <ProtectedRoute><Dashboard /></ProtectedRoute> } />
-          <Route path="/folder/:folderId" element={ <ProtectedRoute><FolderView /></ProtectedRoute> } />
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+    <Router>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Login isRegister={true} />} />
+        <Route 
+          path="/" 
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/folder/:idOrName" 
+          element={
+            <ProtectedRoute>
+              <FolderView />
+            </ProtectedRoute>
+          } 
+        />
+      </Routes>
+    </Router>
   );
 }
 

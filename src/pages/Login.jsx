@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api';
-import { useAuth } from '../context/AuthContext';
 import { FiEye, FiEyeOff, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
+import useAuthStore from '../store/authStore';
 
 const Login = ({ isRegister = false }) => {
   const [formData, setFormData] = useState({ username: '', password: '' });
   const navigate = useNavigate();
-  const { login } = useAuth();
+
+  const login = useAuthStore((state) => state.login); 
   
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -54,22 +55,25 @@ const Login = ({ isRegister = false }) => {
     }
 
     try {
-      const endpoint = isRegister ? '/register' : '/login';
-      const res = await api.post(endpoint, formData);
-      
-      if (isRegister) {
-        setSuccess("Success! Account created. Loggin in...");
-        setFormData({ username: '', password: '' });
-        setTimeout(() => {
-            navigate('/');
-        }, 2000);
-      } else {
-        login(res.data.token, formData.username);
-        navigate('/');
-      }
-    } catch (err) { 
-      setError(err.response?.data?.msg || "Failed to connect");
-    }
+      const endpoint = isRegister ? '/register' : '/login';
+      const res = await api.post(endpoint, formData);
+      
+      if (isRegister) {
+        const loginRes = await api.post('/login', formData);
+        
+        setSuccess("Success! Account created. Logging you in...");
+        setTimeout(() => {
+            login(loginRes.data.token, formData.username);
+            navigate('/');
+        }, 1500);
+
+      } else {
+        login(res.data.token, formData.username);
+        navigate('/');
+      }
+    } catch (err) { 
+      setError(err.response?.data?.msg || "Failed to connect");
+    }
   };
 
   return (

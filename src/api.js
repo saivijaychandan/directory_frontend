@@ -1,16 +1,25 @@
 import axios from 'axios';
 
-const BASE_URL = process.env.REACT_APP_API_URL
-
 const api = axios.create({
-  baseURL: BASE_URL
+  baseURL: 'http://localhost:5000/api'
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  const storage = localStorage.getItem('auth-storage');
+  
+  if (storage) {
+    try {
+      const parsedStorage = JSON.parse(storage);
+      const token = parsedStorage.state?.token;
+
+      if (token) {
+        config.headers.Authorization = token;
+      }
+    } catch (err) {
+      console.error("Error parsing auth token", err);
+    }
   }
+  
   return config;
 });
 

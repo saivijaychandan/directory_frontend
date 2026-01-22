@@ -1,13 +1,18 @@
 import api from '../api';
 
 const folderService = {
-  getAllFolders: () => {
-    return api.get('/folders');
+  getAllFolders: (token) => {
+    const config = token ? { headers: { Authorization: token } } : {};
+    return api.get('/folders', config);
   },
 
-  getFolderDetails: (id) => {
-    return api.get(`/folders/${id}`);
+  getFolderByName: (folderName) => {
+    return api.get(`/folders/${folderName}`);
   },
+
+  getFolderDetails: (idOrName) => {
+    return api.get(`/folders/${idOrName}`);
+},
 
   createFolder: (name) => {
     return api.post('/folders', { name });
