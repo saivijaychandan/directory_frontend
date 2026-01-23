@@ -11,6 +11,7 @@ import SearchBar from '../components/SearchBar';
 import ContextMenu, { ContextMenuItem } from '../components/ContextMenu';
 
 const Dashboard = () => {
+
   const { theme, toggleTheme } = useThemeStore();
 
   const token = useAuthStore((state) => state.token);

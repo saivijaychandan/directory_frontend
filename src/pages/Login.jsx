@@ -5,7 +5,6 @@ import { FiEye, FiEyeOff, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
 import useAuthStore from '../store/authStore';
 
 const Login = ({ isRegister = false }) => {
-  // --- 1. YOUR EXACT LOGIC START ---
   const [formData, setFormData] = useState({ username: '', password: '' });
   const navigate = useNavigate();
 
