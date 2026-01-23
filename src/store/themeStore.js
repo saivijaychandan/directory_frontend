@@ -8,11 +8,14 @@ const useThemeStore = create(
       toggleTheme: () => set((state) => ({ 
         theme: state.theme === 'light' ? 'dark' : 'light' 
       })),
+      themeReset: () => set((state) => ({ 
+        theme: state.theme = 'light'
+      })),
     }),
     {
       name: 'theme-storage',
       storage: createJSONStorage(() => localStorage),
-    }
+    },
   )
 );
 

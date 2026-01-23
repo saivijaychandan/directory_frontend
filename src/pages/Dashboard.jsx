@@ -14,7 +14,11 @@ const Dashboard = () => {
 
   const token = useAuthStore((state) => state.token);
 
+  const logout = useAuthStore((state) => state.logout);
+
   const user = useAuthStore((state) => state.user);
+
+  const themeReset = useThemeStore((state) => state.themeReset);
 
   const [folders, setFolders] = useState([]);
 
@@ -135,7 +139,8 @@ const Dashboard = () => {
         </button>
         <h1 style={{marginLeft: 'auto', marginRight: '20px', fontSize: '18px'}}>Welcome, {user?.username}</h1>
         <button className="danger" onClick={() => {
-          localStorage.removeItem('token');
+          logout();
+          themeReset();
           navigate('/login');
         }}>Logout</button>
       </div>
