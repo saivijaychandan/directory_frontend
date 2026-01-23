@@ -7,6 +7,7 @@ import { FiSun, FiMoon } from 'react-icons/fi';
 import CreateModal from '../components/modals/CreateModal';
 import RenameModal from '../components/modals/RenameModal';
 import DeleteModal from '../components/modals/DeleteModal';
+import SearchBar from '../components/SearchBar';
 
 const Dashboard = () => {
   const { theme, toggleTheme } = useThemeStore();
@@ -24,6 +25,8 @@ const Dashboard = () => {
   const [createModalOpen, setCreateModalOpen] = useState(false);
 
   const [newFolderName, setNewFolderName] = useState('');
+
+  const [searchQuery, setSearchQuery] = useState('');
 
   const [deleteId, setDeleteId] = useState(null);
 
@@ -88,6 +91,10 @@ const Dashboard = () => {
     } catch (err) { alert("Error deleting"); }
   };
 
+  const filteredFolders = folders.filter(folder => 
+    folder.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   if (isLoading) {
     return (
       <div className="loader-container">
@@ -98,26 +105,34 @@ const Dashboard = () => {
 
   return (
     <div className="app-container">
-      <div className="header">
-        <h1>My Drive</h1>
-        <div style={{ marginLeft: '55%', display: 'flex', alignItems: 'center', gap: '15px' }}></div>
-        <button 
-                onClick={toggleTheme}
-                style={{
-                    background: 'transparent',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '50%',
-                    width: '50px',
-                    height: '50px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    color: 'var(--text-primary)'
-                }}
-            >
-                {theme === 'light' ? <FiMoon size={20} /> : <FiSun size={20} />}
-            </button>
+      <div className="header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px' }}>
+        <h1 style={{margin: 0}}>My Drive</h1>
+          <div style={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
+            <SearchBar 
+              query={searchQuery} 
+              setQuery={setSearchQuery} 
+              placeholder="Search folders..."
+            />
+        </div>
+
+          <div style={{ marginLeft: '25%', display: 'flex', alignItems: 'center', gap: '15px' }}></div>
+          <button 
+            onClick={toggleTheme}
+            style={{
+                background: 'transparent',
+                border: '1px solid var(--border-color)',
+                borderRadius: '50%',
+                width: '50px',
+                height: '50px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: 'var(--text-primary)'
+            }}
+          >
+        {theme === 'light' ? <FiMoon size={20} /> : <FiSun size={20} />}
+        </button>
         <h1 style={{marginLeft: 'auto', marginRight: '20px', fontSize: '18px'}}>Welcome, {user?.username}</h1>
         <button className="danger" onClick={() => {
           localStorage.removeItem('token');
@@ -130,7 +145,7 @@ const Dashboard = () => {
       </div>
 
       <div className="grid-container">
-        {folders.map(folder => (
+        {filteredFolders.map(folder => (
           <Link 
             to={`/folder/${folder.name}`} 
             key={folder._id} 
@@ -154,6 +169,12 @@ const Dashboard = () => {
             </div>
           </Link>
         ))}
+
+        {filteredFolders.length === 0 && searchQuery && (
+            <p style={{ color: 'var(--text-secondary)', gridColumn: '1/-1', textAlign: 'center' }}>
+                No folders found matching "{searchQuery}"
+            </p>
+        )}  
       </div>
 
       <CreateModal 

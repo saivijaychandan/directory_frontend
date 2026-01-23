@@ -4,7 +4,7 @@ import useAuthStore from '../store/authStore';
 import imageService from '../services/imageService';
 import folderService from '../services/folderService';
 import { FaArrowLeft } from 'react-icons/fa';
-
+import SearchBar from '../components/SearchBar';
 import ImageCard from '../components/ImageCard';
 import UploadButton from '../components/UploadButton';
 import TransferModal from '../components/modals/TransferModal';
@@ -18,6 +18,7 @@ const FolderView = () => {
   const token = useAuthStore((state) => state.token);
 
   const [currentFolderId, setCurrentFolderId] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const [images, setImages] = useState([]);
   const [allFolders, setAllFolders] = useState([]);
@@ -59,13 +60,17 @@ const FolderView = () => {
     }
   }, [idOrName, token, images.length]);
 
+  const filteredImages = images.filter(img => 
+    img.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   useEffect(() => { 
       fetchData(); 
   }, [fetchData]);
 
+
   const handleUpload = async (file) => {
     if (!currentFolderId) return;
-
     try {
       await imageService.uploadImage(currentFolderId, file, token);
       fetchData();
@@ -126,17 +131,22 @@ const FolderView = () => {
 
   return (
     <div className="app-container">
-      <div className="header">
+      <div className="header" style={{ justifyContent: 'flex-start', gap: '20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
           <Link to="/" style={{ textDecoration: 'none', fontSize: '24px' }}><FaArrowLeft /></Link>
           <h1>{folderName}</h1>
         </div>
+        <SearchBar 
+            query={searchQuery} 
+            setQuery={setSearchQuery} 
+            placeholder="Search files..." 
+         />
       </div>
 
       <UploadButton onUpload={handleUpload} />
 
       <div className="grid-container">
-        {images.map(img => (
+        {filteredImages.map(img => (
           <ImageCard 
             key={img._id} 
             img={img} 
@@ -151,6 +161,11 @@ const FolderView = () => {
             <div style={{color:'#777', fontStyle:'italic', marginTop:'20px'}}>
                 This folder is empty. Upload an image to get started.
             </div>
+        )}
+        {filteredImages.length === 0 && searchQuery && (
+             <p style={{ color: 'var(--text-secondary)', gridColumn: '1/-1', textAlign: 'center' }}>
+                No files found matching "{searchQuery}"
+            </p>
         )}
       </div>
 

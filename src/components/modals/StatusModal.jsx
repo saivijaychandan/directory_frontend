@@ -4,7 +4,7 @@ const StatusModal = ({ isOpen, onClose, type, message }) => {
   if (!isOpen) return null;
 
   const isSuccess = type === 'success';
-  const color = isSuccess ? '#28a745' : '#dc3545'; // Green or Red
+  const color = isSuccess ? '#28a745' : '#dc3545';
 
   return (
     <div className="modal-overlay" onClick={onClose}>
