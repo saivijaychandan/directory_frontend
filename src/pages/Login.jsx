@@ -5,6 +5,7 @@ import { FiEye, FiEyeOff, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
 import useAuthStore from '../store/authStore';
 
 const Login = ({ isRegister = false }) => {
+  // --- 1. YOUR EXACT LOGIC START ---
   const [formData, setFormData] = useState({ username: '', password: '' });
   const navigate = useNavigate();
 
@@ -13,6 +14,9 @@ const Login = ({ isRegister = false }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // Added for the design: Random Image State
+  const [randomImage] = useState(`https://picsum.photos/800/1200?random=${Math.floor(Math.random() * 1000)}`);
 
   useEffect(() => {
     setError('');
@@ -55,102 +59,119 @@ const Login = ({ isRegister = false }) => {
     }
 
     try {
-      const endpoint = isRegister ? '/register' : '/login';
-      const res = await api.post(endpoint, formData);
-      
-      if (isRegister) {
-        const loginRes = await api.post('/login', formData);
+      const endpoint = isRegister ? '/register' : '/login';
+      const res = await api.post(endpoint, formData);
+      
+      if (isRegister) {
+        const loginRes = await api.post('/login', formData);
         
-        setSuccess("Success! Account created. Logging you in...");
-        setTimeout(() => {
-            login(loginRes.data.token, formData.username);
-            navigate('/');
-        }, 1500);
+        setSuccess("Success! Account created. Logging you in...");
+        setTimeout(() => {
+            login(loginRes.data.token, formData.username);
+            navigate('/');
+        }, 1500);
 
-      } else {
-        login(res.data.token, formData.username);
-        navigate('/');
-      }
-    } catch (err) { 
-      setError(err.response?.data?.msg || "Failed to connect");
-    }
+      } else {
+        login(res.data.token, formData.username);
+        navigate('/');
+      }
+    } catch (err) { 
+      setError(err.response?.data?.msg || "Failed to connect");
+    }
   };
+  // --- YOUR EXACT LOGIC END ---
 
   return (
-    <div className="auth-box">
-      <h2>{isRegister ? 'Create Account' : 'Login Page'}</h2>
+    <div className="login-container">
       
-      {success && (
-        <div style={{
-            backgroundColor: '#d4edda', color: '#155724', padding: '10px', 
-            borderRadius: '5px', marginBottom: '15px', fontSize: '14px',
-            display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid #c3e6cb'
-        }}>
-            <FiCheckCircle size={18} />
-            {success}
+      {/* LEFT SIDE: Random Image */}
+      <div className='login-image-section'>
+        <img src={randomImage} alt="Background" />
+        <div className="login-overlay-text">
+            <h1>My Drive</h1>
+            <p>Secure cloud storage for your memories.</p>
         </div>
-      )}
+      </div>
 
-      {error && (
-        <div style={{
-            backgroundColor: '#f8d7da', color: '#721c24', padding: '10px', 
-            borderRadius: '5px', marginBottom: '15px', fontSize: '14px',
-            display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid #f5c6cb'
-        }}>
-            <FiAlertCircle size={18} />
-            {error}
+      {/* RIGHT SIDE: Login Form */}
+      <div className="login-form-section">
+        <div className="auth-box">
+            <h2>{isRegister ? 'Create Account' : 'Login Page'}</h2>
+            
+            {success && (
+              <div style={{
+                  backgroundColor: '#d4edda', color: '#155724', padding: '10px', 
+                  borderRadius: '5px', marginBottom: '15px', fontSize: '14px',
+                  display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid #c3e6cb'
+              }}>
+                  <FiCheckCircle size={18} />
+                  {success}
+              </div>
+            )}
+
+            {error && (
+              <div style={{
+                  backgroundColor: '#f8d7da', color: '#721c24', padding: '10px', 
+                  borderRadius: '5px', marginBottom: '15px', fontSize: '14px',
+                  display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid #f5c6cb'
+              }}>
+                  <FiAlertCircle size={18} />
+                  {error}
+              </div>
+            )}
+
+            <form className="auth-form" onSubmit={handleSubmit}>
+              <input 
+                type="email" placeholder="Email" required
+                value={formData.username}
+                onChange={e => setFormData({...formData, username: e.target.value})}
+                // Adjusted style to fit the new box perfectly
+                style={{ width: '100%', boxSizing: 'border-box', padding: '10px' }}
+                disabled={!!success} 
+              />
+              
+              <div style={{ position: 'relative' }}> 
+                <input 
+                  type={showPassword ? "text" : "password"} 
+                  placeholder="Password" required
+                  value={formData.password}
+                  onChange={e => setFormData({...formData, password: e.target.value})}
+                  style={{ width: '100%', boxSizing: 'border-box', padding: '10px' }}
+                  disabled={!!success}
+                />
+                <span 
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{ 
+                    position: 'absolute', right: '10px', top: '50%', 
+                    transform: 'translateY(-50%)', cursor: 'pointer',
+                    color: '#777', display: 'flex'
+                  }}
+                >
+                  {showPassword ? <FiEye size={20} /> : <FiEyeOff size={20} />}
+                </span>
+              </div>
+
+              <button 
+                  className="primary" type="submit" 
+                  style={{marginTop: '15px', opacity: success ? 0.5 : 1}}
+                  disabled={!!success}
+              >
+                {isRegister ? 'Sign Up' : 'Login'}
+              </button>
+            </form>
+            
+            <div style={{ marginTop: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
+              <span style={{ fontSize: '14px', color: '#666' }}>
+                  {isRegister ? 'Already have an account?' : 'No account?'}
+              </span>
+              <Link 
+                  to={isRegister ? "/login" : "/register"} 
+                  style={{ fontSize: '14px', color: '#007bff', textDecoration: 'none', fontWeight: 'bold' }}
+              >
+                {isRegister ? "Login" : "Register here"}
+              </Link>
+            </div>
         </div>
-      )}
-
-      <form className="auth-form" onSubmit={handleSubmit}>
-        <input 
-          type="email" placeholder="Email" required
-          value={formData.username}
-          onChange={e => setFormData({...formData, username: e.target.value})}
-          style={{width: "94.5%"}}
-          disabled={!!success} 
-        />
-        
-        <div style={{ position: 'relative' }}> 
-          <input 
-            type={showPassword ? "text" : "password"} 
-            placeholder="Password" required
-            value={formData.password}
-            onChange={e => setFormData({...formData, password: e.target.value})}
-            style={{ width: '100%', boxSizing: 'border-box' }}
-            disabled={!!success}
-          />
-          <span 
-            onClick={() => setShowPassword(!showPassword)}
-            style={{ 
-              position: 'absolute', right: '10px', top: '50%', 
-              transform: 'translateY(-50%)', cursor: 'pointer',
-              color: '#777', display: 'flex'
-            }}
-          >
-            {showPassword ? <FiEye size={20} /> : <FiEyeOff size={20} />}
-          </span>
-        </div>
-
-        <button 
-            className="primary" type="submit" 
-            style={{marginTop: '15px', opacity: success ? 0.5 : 1}}
-            disabled={!!success}
-        >
-          {isRegister ? 'Sign Up' : 'Login'}
-        </button>
-      </form>
-      
-      <div style={{ marginTop: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
-        <span style={{ fontSize: '14px', color: '#666' }}>
-            {isRegister ? 'Already have an account?' : 'No account?'}
-        </span>
-        <Link 
-            to={isRegister ? "/login" : "/register"} 
-            style={{ fontSize: '14px', color: '#007bff', textDecoration: 'none', fontWeight: 'bold' }}
-        >
-          {isRegister ? "Login" : "Register here"}
-        </Link>
       </div>
     </div>
   );
