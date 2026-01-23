@@ -9,7 +9,7 @@ const getFileInfo = (filename) => {
   return { name, ext };
 };
 
-const ImageCard = ({ img, onRename, onDelete, onView, onCopy, onMove,onContextMenu }) => {
+const ImageCard = ({ img, onView, onContextMenu }) => {
   const { name, ext } = getFileInfo(img.name);
 
   const getBadgeColor = (type) => {

@@ -8,7 +8,7 @@ const ContextMenu = ({ x, y, onClose, children }) => {
         onClick={onClose} 
         onContextMenu={(e) => { e.preventDefault(); onClose(); }} 
       />
-      
+
       <div 
         className="context-menu" 
         style={{ top: y, left: x }}

@@ -15,7 +15,6 @@ const Login = ({ isRegister = false }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Added for the design: Random Image State
   const [randomImage] = useState(`https://picsum.photos/800/1200?random=${Math.floor(Math.random() * 1000)}`);
 
   useEffect(() => {
@@ -79,12 +78,10 @@ const Login = ({ isRegister = false }) => {
       setError(err.response?.data?.msg || "Failed to connect");
     }
   };
-  // --- YOUR EXACT LOGIC END ---
 
   return (
     <div className="login-container">
       
-      {/* LEFT SIDE: Random Image */}
       <div className='login-image-section'>
         <img src={randomImage} alt="Background" />
         <div className="login-overlay-text">
@@ -93,7 +90,6 @@ const Login = ({ isRegister = false }) => {
         </div>
       </div>
 
-      {/* RIGHT SIDE: Login Form */}
       <div className="login-form-section">
         <div className="auth-box">
             <h2>{isRegister ? 'Create Account' : 'Login Page'}</h2>
@@ -125,7 +121,6 @@ const Login = ({ isRegister = false }) => {
                 type="email" placeholder="Email" required
                 value={formData.username}
                 onChange={e => setFormData({...formData, username: e.target.value})}
-                // Adjusted style to fit the new box perfectly
                 style={{ width: '100%', boxSizing: 'border-box', padding: '10px' }}
                 disabled={!!success} 
               />
