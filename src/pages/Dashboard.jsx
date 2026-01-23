@@ -8,6 +8,7 @@ import CreateModal from '../components/modals/CreateModal';
 import RenameModal from '../components/modals/RenameModal';
 import DeleteModal from '../components/modals/DeleteModal';
 import SearchBar from '../components/SearchBar';
+import ContextMenu, { ContextMenuItem } from '../components/ContextMenu';
 
 const Dashboard = () => {
   const { theme, toggleTheme } = useThemeStore();
@@ -39,6 +40,23 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   const [createError, setCreateError] = useState('');
+
+  const [contextMenu, setContextMenu] = useState({ 
+    visible: false, 
+    x: 0, 
+    y: 0, 
+    folder: null 
+  });
+
+  const handleContextMenu = (e, folder) => {
+    e.preventDefault();
+    setContextMenu({
+      visible: true,
+      x: e.pageX,
+      y: e.pageY,
+      folder: folder
+    });
+  };
 
   const fetchFolders = useCallback(async () => {
     try {
@@ -110,7 +128,7 @@ const Dashboard = () => {
   return (
     <div className="app-container">
       <div className="header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px' }}>
-        <h1 style={{margin: 0}}>My Drive</h1>
+        <h1 style={{margin: 0, fontFamily: "Momo Signature"}}>My Drive</h1>
           <div style={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
             <SearchBar 
               query={searchQuery} 
@@ -156,21 +174,9 @@ const Dashboard = () => {
             key={folder._id} 
             style={{ textDecoration: 'none' }}
           > 
-            <div className="folder-card">
+            <div className="folder-item" onContextMenu={(e) => handleContextMenu(e, folder)}>
               <img src={FOLDER_ICON_URL} alt="folder" className="folder-icon-img" style={{width:90}}/>
-              <div className="folder-name truncate-text">{folder.name}</div>
-              
-              <div className="card-actions">
-                <button className="secondary" onClick={(e) => {
-                    e.preventDefault();
-                    setRenameData({ isOpen: true, id: folder._id, name: folder.name });
-                }}>Rename</button>
-
-                <button className="danger" onClick={(e) => {
-                    e.preventDefault();
-                    setDeleteId(folder._id);
-                }}>Delete</button>
-              </div>
+              <div className="folder-item-text">{folder.name}</div>
             </div>
           </Link>
         ))}
@@ -181,6 +187,30 @@ const Dashboard = () => {
             </p>
         )}  
       </div>
+
+      {contextMenu.visible && (
+        <ContextMenu 
+          x={contextMenu.x} 
+          y={contextMenu.y} 
+          onClose={() => setContextMenu({ ...contextMenu, visible: false })}
+        >
+          <ContextMenuItem 
+            label="Rename" 
+            onClick={() => {
+              setRenameData({ isOpen: true, id: contextMenu.folder._id, name: contextMenu.folder.name });
+              setContextMenu({ ...contextMenu, visible: false });
+            }} 
+          />
+          <ContextMenuItem 
+            label="Delete" 
+            danger={true}
+            onClick={() => {
+              setDeleteId(contextMenu.folder._id);
+              setContextMenu({ ...contextMenu, visible: false });
+            }} 
+          />
+        </ContextMenu>
+      )}
 
       <CreateModal 
         isOpen={createModalOpen}

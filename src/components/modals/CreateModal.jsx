@@ -17,6 +17,7 @@ const CreateModal = ({ isOpen, onClose, name, setName, onConfirm, error }) => {
           style={{ 
             width: '100%', 
             marginBottom: error ? '10px' : '15px',
+            marginTop: '20px',
             border: error ? '1px solid red' : '1px solid var(--input-border)'
           }}
         />

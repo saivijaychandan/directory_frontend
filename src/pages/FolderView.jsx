@@ -12,6 +12,7 @@ import ViewImageModal from '../components/modals/ViewImageModal';
 import RenameModal from '../components/modals/RenameModal';
 import DeleteModal from '../components/modals/DeleteModal';
 import StatusModal from '../components/modals/StatusModal';
+import ContextMenu,{ ContextMenuItem } from '../components/ContextMenu';
 
 const FolderView = () => {
   const { idOrName } = useParams(); 
@@ -31,6 +32,12 @@ const FolderView = () => {
   const [renameError, setRenameError] = useState('');
   const [statusModal, setStatusModal] = useState({ isOpen: false, type: 'success', message: '' });
   const [transferData, setTransferData] = useState({ isOpen: false, mode: 'copy', imageId: null, targetFolderId: '' });
+  const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0, image: null });
+
+  const handleContextMenu = (e, img) => {
+    e.preventDefault();
+    setContextMenu({ visible: true, x: e.pageX, y: e.pageY, image: img });
+  };
 
   const fetchData = useCallback(async () => {
     if (!token || !idOrName) return;
@@ -134,7 +141,7 @@ const FolderView = () => {
       <div className="header" style={{ justifyContent: 'flex-start', gap: '20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
           <Link to="/" style={{ textDecoration: 'none', fontSize: '24px' }}><FaArrowLeft /></Link>
-          <h1>{folderName}</h1>
+          <h1 style={{fontFamily: "Momo Signature"}}>{folderName}</h1>
         </div>
         <SearchBar 
             query={searchQuery} 
@@ -155,6 +162,7 @@ const FolderView = () => {
             onDelete={setDeleteId}
             onCopy={(id) => setTransferData({ isOpen: true, mode: 'copy', imageId: id, targetFolderId: currentFolderId })}
             onMove={(id) => setTransferData({ isOpen: true, mode: 'move', imageId: id, targetFolderId: '' })}
+            onContextMenu={(e) => handleContextMenu(e, img)}
           />
         ))}
         {images.length === 0 && (
@@ -168,6 +176,51 @@ const FolderView = () => {
             </p>
         )}
       </div>
+
+      {contextMenu.visible && (
+        <ContextMenu 
+          x={contextMenu.x} 
+          y={contextMenu.y} 
+          onClose={() => setContextMenu({ ...contextMenu, visible: false })}
+        >
+          <ContextMenuItem 
+             label="Preview" 
+             onClick={() => {
+               setViewImage(contextMenu.image);
+               setContextMenu({ ...contextMenu, visible: false });
+             }} 
+          />
+          <ContextMenuItem 
+             label="Rename" 
+             onClick={() => {
+               setRenameData({ isOpen: true, id: contextMenu.image._id, name: contextMenu.image.name });
+               setContextMenu({ ...contextMenu, visible: false });
+             }} 
+          />
+          <ContextMenuItem 
+             label="Copy to..." 
+             onClick={() => {
+               setTransferData({ isOpen: true, mode: 'copy', imageId: contextMenu.image._id, targetFolderId: currentFolderId });
+               setContextMenu({ ...contextMenu, visible: false });
+             }} 
+          />
+          <ContextMenuItem 
+             label="Move to..." 
+             onClick={() => {
+               setTransferData({ isOpen: true, mode: 'move', imageId: contextMenu.image._id, targetFolderId: '' });
+               setContextMenu({ ...contextMenu, visible: false });
+             }} 
+          />
+          <ContextMenuItem 
+             label="Delete" 
+             danger={true} 
+             onClick={() => {
+               setDeleteId(contextMenu.image._id);
+               setContextMenu({ ...contextMenu, visible: false });
+             }} 
+          />
+        </ContextMenu>
+       )}
 
       <TransferModal 
         isOpen={transferData.isOpen}

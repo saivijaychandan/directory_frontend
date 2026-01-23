@@ -9,7 +9,7 @@ const getFileInfo = (filename) => {
   return { name, ext };
 };
 
-const ImageCard = ({ img, onRename, onDelete, onView, onCopy, onMove }) => {
+const ImageCard = ({ img, onRename, onDelete, onView, onCopy, onMove,onContextMenu }) => {
   const { name, ext } = getFileInfo(img.name);
 
   const getBadgeColor = (type) => {
@@ -19,7 +19,7 @@ const ImageCard = ({ img, onRename, onDelete, onView, onCopy, onMove }) => {
   };
 
   return (
-    <div className="image-card" style={{ width: '240px' }}>
+    <div className="image-card" style={{ width: '240px' }} onContextMenu={onContextMenu} >
       <img 
         src={`${process.env.REACT_APP_API_URL}/images/${img._id}`} 
         alt={img.name} 
@@ -42,49 +42,6 @@ const ImageCard = ({ img, onRename, onDelete, onView, onCopy, onMove }) => {
                 {ext}
             </span>
           )}
-        </div>
-        
-        <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: '1fr 1fr',
-            gap: '8px' 
-        }}>
-          
-          {/* Row 1 */}
-          <button 
-            className="secondary" 
-            style={{ fontSize: '13px', display: 'flex', justifyContent: 'center', alignItems: 'center' }} 
-            onClick={(e) => { e.stopPropagation(); onCopy(img._id); }}
-          >
-            Copy
-          </button>
-
-          <button 
-            className="secondary" 
-            style={{ fontSize: '13px', display: 'flex', justifyContent: 'center', alignItems: 'center' }} 
-            onClick={() => onRename(img)}
-          >
-            Rename
-          </button>
-
-          <button 
-            className="secondary" 
-            style={{ fontSize: '13px', display: 'flex', justifyContent: 'center', alignItems: 'center' }} 
-            onClick={(e) => { e.stopPropagation(); onMove(img._id); }}
-          >
-            Move
-          </button>
-
-          <button 
-            className="danger" 
-            style={{ 
-                fontSize: '13px', display: 'flex', justifyContent: 'center', alignItems: 'center'
-            }} 
-            onClick={() => onDelete(img._id)}
-          >
-            Delete
-          </button>
-
         </div>
       </div>
     </div>
