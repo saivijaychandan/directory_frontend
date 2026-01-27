@@ -65,12 +65,12 @@ const Login = ({ isRegister = false }) => {
         
         setSuccess("Success! Account created. Logging you in...");
         setTimeout(() => {
-            login(loginRes.data.token, formData.username);
+            login(loginRes.data.token, loginRes.data.user);
             navigate('/');
         }, 1500);
 
       } else {
-        login(res.data.token, formData.username);
+        login(res.data.token, res.data.user);
         navigate('/');
       }
     } catch (err) { 

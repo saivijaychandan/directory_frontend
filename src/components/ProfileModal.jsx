@@ -7,7 +7,7 @@ const ProfileModal = ({ isOpen, onClose, isForced }) => {
   const [formData, setFormData] = useState({
     name: '',
     age: '',
-    phoneNumber: ''
+    phone: ''
   });
   const [error, setError] = useState('');
 
@@ -16,7 +16,7 @@ const ProfileModal = ({ isOpen, onClose, isForced }) => {
         setFormData({
             name: user.name || '',
             age: user.age || '',
-            phoneNumber: user.phoneNumber || ''
+            phone: user.phone || ''
         });
     }
   }, [user, isOpen]);
@@ -27,7 +27,7 @@ const ProfileModal = ({ isOpen, onClose, isForced }) => {
     e.preventDefault();
     setError('');
 
-    if (!formData.name || !formData.age || !formData.phoneNumber) {
+    if (!formData.name || !formData.age || !formData.phone) {
         setError("All fields are required.");
         return;
     }
@@ -67,8 +67,8 @@ const ProfileModal = ({ isOpen, onClose, isForced }) => {
             />
             <input 
                 type="tel" placeholder="Phone Number" 
-                value={formData.phoneNumber}
-                onChange={e => setFormData({...formData, phoneNumber: e.target.value})}
+                value={formData.phone}
+                onChange={e => setFormData({...formData, phone: e.target.value})}
             />
             
             <button type="submit" className="primary">
