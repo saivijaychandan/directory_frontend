@@ -141,7 +141,7 @@ const FolderView = () => {
       <div className="header" style={{ justifyContent: 'flex-start', gap: '20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
           <Link to="/" style={{ textDecoration: 'none', fontSize: '24px' }}><FaArrowLeft /></Link>
-          <h1 style={{fontFamily: "Momo Signature"}}>{folderName}</h1>
+          <h1 style={{fontFamily: "Momo Signature", marginRight: "200px"}}>{folderName}</h1>
         </div>
         <SearchBar 
             query={searchQuery} 
