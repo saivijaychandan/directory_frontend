@@ -163,7 +163,7 @@ h1, h2, h3 {
     font-weight: 500;
 }
 
-input[type="text"], input[type="password"], input[type="email"], select {
+input[type="text"], input[type="password"], input[type="email"], input[type="tel"], input[type="number"],select {
   padding: 10px;
   background-color: var(--input-bg);
   color: var(--text-primary);

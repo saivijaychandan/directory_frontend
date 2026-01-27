@@ -3,44 +3,38 @@ import useAuthStore from '../store/authStore';
 import { Link, useNavigate } from 'react-router-dom';
 import folderService from '../services/folderService';
 import useThemeStore from '../store/themeStore';
-import { FiSun, FiMoon } from 'react-icons/fi';
+import { FiSun, FiMoon, FiUser } from 'react-icons/fi'; // <--- Added FiUser
 import CreateModal from '../components/modals/CreateModal';
 import RenameModal from '../components/modals/RenameModal';
 import DeleteModal from '../components/modals/DeleteModal';
 import SearchBar from '../components/SearchBar';
 import ContextMenu, { ContextMenuItem } from '../components/ContextMenu';
+import ProfileModal from '../components/ProfileModal';
 
 const Dashboard = () => {
 
   const { theme, toggleTheme } = useThemeStore();
-
   const token = useAuthStore((state) => state.token);
-
   const logout = useAuthStore((state) => state.logout);
-
   const user = useAuthStore((state) => state.user);
-
   const themeReset = useThemeStore((state) => state.themeReset);
 
   const [folders, setFolders] = useState([]);
-
   const navigate = useNavigate();
 
   const FOLDER_ICON_URL = "https://cdn-icons-png.flaticon.com/512/3767/3767084.png";
 
   const [createModalOpen, setCreateModalOpen] = useState(false);
-
   const [newFolderName, setNewFolderName] = useState('');
-
   const [searchQuery, setSearchQuery] = useState('');
-
   const [deleteId, setDeleteId] = useState(null);
-
   const [renameData, setRenameData] = useState({ isOpen: false, id: null, name: '' });
-
   const [isLoading, setIsLoading] = useState(true);
-
   const [createError, setCreateError] = useState('');
+
+  const [isProfileOpen, setProfileOpen] = useState(false);
+  
+  const isForcedProfile = user && !user.isProfileSetup;
 
   const [contextMenu, setContextMenu] = useState({ 
     visible: false, 
@@ -64,7 +58,7 @@ const Dashboard = () => {
       const res = await folderService.getAllFolders(token);
       setFolders(res.data);
     } catch (err) { 
-      alert("Failed to load folders:");
+      console.error("Failed to load folders");
     } finally {
       setIsLoading(false);
     }
@@ -130,15 +124,16 @@ const Dashboard = () => {
     <div className="app-container">
       <div className="header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px' }}>
         <h1 style={{margin: 0, fontFamily: "Momo Signature"}}>My Drive</h1>
-          <div style={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
-            <SearchBar 
-              query={searchQuery} 
-              setQuery={setSearchQuery} 
-              placeholder="Search folders..."
-            />
+        
+        <div style={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
+          <SearchBar 
+            query={searchQuery} 
+            setQuery={setSearchQuery} 
+            placeholder="Search folders..."
+          />
         </div>
 
-          <div style={{ marginLeft: '25%', display: 'flex', alignItems: 'center', gap: '15px' }}></div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
           <button 
             onClick={toggleTheme}
             style={{
@@ -147,21 +142,41 @@ const Dashboard = () => {
                 borderRadius: '50%',
                 width: '50px',
                 height: '50px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                color: 'var(--text-primary)'
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', color: 'var(--text-primary)'
             }}
           >
-        {theme === 'light' ? <FiMoon size={20} /> : <FiSun size={20} />}
-        </button>
-        <h1 style={{marginLeft: 'auto', marginRight: '20px', fontSize: '18px'}}>Welcome, {user?.username}</h1>
-        <button className="danger" onClick={() => {
-          logout();
-          themeReset();
-          navigate('/login');
-        }}>Logout</button>
+            {theme === 'light' ? <FiMoon size={20} /> : <FiSun size={20} />}
+          </button>
+
+          <button 
+            onClick={() => setProfileOpen(true)}
+            title="Edit Profile"
+            style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                background: 'none', border: 'none', cursor: 'pointer',
+                color: 'var(--text-primary)', fontSize: '16px'
+            }}
+          >
+            <div style={{ 
+              width: '40px', height: '40px', borderRadius: '50%', 
+              background: '#007bff', color: 'white', 
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontWeight: 'bold', fontSize: '18px'
+            }}>
+              {user?.name ? user.name[0].toUpperCase() : <FiUser />}
+            </div>
+            <span style={{ display: 'none', '@media (min-width: 768px)': { display: 'block' } }}>
+              {user?.name || user?.username}
+            </span>
+          </button>
+
+          <button className="danger" onClick={() => {
+              logout();
+              themeReset();
+              navigate('/login');
+          }}>Logout</button>
+        </div>
       </div>
 
       <div style={{ marginBottom: '30px', display: 'flex' }}>
@@ -175,7 +190,13 @@ const Dashboard = () => {
             key={folder._id} 
             style={{ textDecoration: 'none' }}
           > 
-            <div className="folder-item" onContextMenu={(e) => handleContextMenu(e, folder)}>
+            <div 
+              className="folder-item" 
+              onContextMenu={(e) => handleContextMenu(e, folder)}
+              onClick={(e) => {
+                 if (contextMenu.visible) e.preventDefault();
+              }}
+            > 
               <img src={FOLDER_ICON_URL} alt="folder" className="folder-icon-img" style={{width:90}}/>
               <div className="folder-item-text">{folder.name}</div>
             </div>
@@ -212,6 +233,12 @@ const Dashboard = () => {
           />
         </ContextMenu>
       )}
+
+      <ProfileModal 
+         isOpen={isProfileOpen || isForcedProfile} 
+         onClose={() => setProfileOpen(false)}
+         isForced={isForcedProfile}
+      />
 
       <CreateModal 
         isOpen={createModalOpen}

@@ -57,11 +57,11 @@ const Login = ({ isRegister = false }) => {
     }
 
     try {
-      const endpoint = isRegister ? '/register' : '/login';
+      const endpoint = isRegister ? '/auth/register' : '/auth/login';
       const res = await api.post(endpoint, formData);
       
       if (isRegister) {
-        const loginRes = await api.post('/login', formData);
+        const loginRes = await api.post('/auth/login', formData);
         
         setSuccess("Success! Account created. Logging you in...");
         setTimeout(() => {
