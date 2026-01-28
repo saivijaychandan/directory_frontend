@@ -12,7 +12,7 @@ const folderService = {
 
   getFolderDetails: (idOrName) => {
     return api.get(`/folders/${idOrName}`);
-},
+  },
 
   createFolder: (name) => {
     return api.post('/folders', { name });

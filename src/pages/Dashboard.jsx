@@ -3,7 +3,7 @@ import useAuthStore from '../store/authStore';
 import { Link, useNavigate } from 'react-router-dom';
 import folderService from '../services/folderService';
 import useThemeStore from '../store/themeStore';
-import { FiSun, FiMoon, FiUser } from 'react-icons/fi'; // <--- Added FiUser
+import { FiSun, FiMoon, FiUser } from 'react-icons/fi';
 import CreateModal from '../components/modals/CreateModal';
 import RenameModal from '../components/modals/RenameModal';
 import DeleteModal from '../components/modals/DeleteModal';
