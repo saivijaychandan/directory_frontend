@@ -8,7 +8,7 @@ import SearchBar from '../components/SearchBar';
 import ImageCard from '../components/ImageCard';
 import UploadButton from '../components/UploadButton';
 import TransferModal from '../components/modals/TransferModal';
-import ViewImageModal from '../components/modals/ViewImageModal';
+import Lightbox from '../components/Lightbox';
 import RenameModal from '../components/modals/RenameModal';
 import DeleteModal from '../components/modals/DeleteModal';
 import StatusModal from '../components/modals/StatusModal';
@@ -135,6 +135,7 @@ const FolderView = () => {
   };
 
   if (isLoading) return <div className="loader-container"><div className="spinner"></div></div>;
+  
 
   return (
     <div className="app-container">
@@ -233,10 +234,14 @@ const FolderView = () => {
         onConfirm={confirmTransfer}
       />
       
-      <ViewImageModal 
-        image={viewImage} 
-        onClose={() => setViewImage(null)} 
-      />
+      {viewImage && (
+        <Lightbox 
+          currentImage={viewImage}
+          images={filteredImages}
+          onClose={() => setViewImage(null)}
+          onSetImage={setViewImage}
+        />
+      )}
 
       <RenameModal 
         isOpen={renameData.isOpen}
