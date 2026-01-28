@@ -5,6 +5,7 @@ import useAuthStore from '../store/authStore';
 import { useNavigate } from 'react-router-dom';
 
 const ForgotPassword = ({ onBack, onComplete }) => {
+  // Setting what step it is in (Step 1 is Request for email and Step 2 is Reset view for otp)
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
@@ -34,7 +35,6 @@ const ForgotPassword = ({ onBack, onComplete }) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-
     try {
       await api.post('/auth/reset-password', {
         username: email,
@@ -66,14 +66,15 @@ const ForgotPassword = ({ onBack, onComplete }) => {
           <p style={{ textAlign: 'center', color: '#666', fontSize: '14px' }}>
             Enter your email to receive a reset code.
           </p>
-          <div style={{ position: 'relative' }}>
+          <div style={{ position: 'relative', display: 'flex' }}>
+            <span className="icon-input" style={{ margin: '10px' }}><FiMail /></span>
             <input
               type="email" placeholder="Enter your email" required
               value={email}
               onChange={e => setEmail(e.target.value)}
               style={{ width: '100%', padding: '10px' }}
             />
-            <span className="icon-input"><FiMail /></span>
+            
           </div>
           <button className="primary" type="submit" disabled={loading} style={{ marginTop: '15px' }}>
             {loading ? 'Sending...' : 'Send Code'}
@@ -92,14 +93,15 @@ const ForgotPassword = ({ onBack, onComplete }) => {
             style={{ width: '100%', textAlign: 'center', letterSpacing: '5px', marginBottom: '10px', padding: '10px' }}
           />
 
-          <div style={{ position: 'relative' }}>
+          <div style={{ position: 'relative', display: 'flex' }}>
+            <span className="icon-input" style={{ margin: '10px' }}><FiLock /></span>
             <input
               type="password" placeholder="New Password" required
               value={newPassword}
               onChange={e => setNewPassword(e.target.value)}
               style={{ width: '100%', padding: '10px' }}
             />
-            <span className="icon-input"><FiLock /></span>
+            
           </div>
 
           <button className="primary" type="submit" disabled={loading} style={{ marginTop: '15px' }}>
