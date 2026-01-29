@@ -8,7 +8,12 @@ import useThemeStore from './store/themeStore';
 import { useEffect } from 'react';
 
 function App() {
-  const theme = useThemeStore((state) => state.theme)
+  const theme = useThemeStore((state) => state.theme);
+  const checkExpiry = useThemeStore((state) => state.checkExpiry);
+
+  useEffect(() => {
+    checkExpiry();
+  }, []);
 
   useEffect(()=>{
     document.documentElement.setAttribute('data-theme',theme);
