@@ -5,7 +5,6 @@ import useAuthStore from '../store/authStore';
 import { useNavigate } from 'react-router-dom';
 
 const ForgotPassword = ({ onBack, onComplete }) => {
-  // Setting what step it is in (Step 1 is Request for email and Step 2 is Reset view for otp)
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
