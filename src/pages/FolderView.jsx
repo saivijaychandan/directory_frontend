@@ -12,7 +12,7 @@ import Lightbox from '../components/Lightbox';
 import RenameModal from '../components/modals/RenameModal';
 import DeleteModal from '../components/modals/DeleteModal';
 import StatusModal from '../components/modals/StatusModal';
-import ContextMenu,{ ContextMenuItem } from '../components/ContextMenu';
+import ContextMenu, { ContextMenuItem } from '../components/ContextMenu';
 
 const FolderView = () => {
   const { idOrName } = useParams(); 
@@ -24,7 +24,9 @@ const FolderView = () => {
   const [images, setImages] = useState([]);
   const [allFolders, setAllFolders] = useState([]);
   const [folderName, setFolderName] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
+  
+  const [isInitialLoading, setIsInitialLoading] = useState(true); 
+  const [isSearching, setIsSearching] = useState(false);
 
   const [viewImage, setViewImage] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
@@ -39,23 +41,29 @@ const FolderView = () => {
     setContextMenu({ visible: true, x: e.pageX, y: e.pageY, image: img });
   };
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (query = '') => {
     if (!token || !idOrName) return;
 
+    if (!currentFolderId) setIsInitialLoading(true); 
+    else setIsSearching(true);
+
     try {
-      if (images.length === 0) setIsLoading(true);
+      let realId = currentFolderId;
+      if (!realId) {
+        const folderRes = await folderService.getFolderDetails(idOrName);
+        realId = folderRes.data._id;
+        setCurrentFolderId(realId);
+        setFolderName(folderRes.data.name);
+      }
 
-      const folderRes = await folderService.getFolderDetails(idOrName);
-      const folderData = folderRes.data;
+      let imagesRes;
+      if (query.trim()) {
+        imagesRes = await imageService.searchImages(realId, query);
+      } else {
+        imagesRes = await imageService.getImagesInFolder(realId);
+      }
 
-      const realId = folderData._id;
-      setCurrentFolderId(realId);
-      setFolderName(folderData.name);
-
-      const [imagesRes, allFoldersRes] = await Promise.all([
-        imageService.getImagesInFolder(realId, token),
-        folderService.getAllFolders(token)
-      ]);
+      const allFoldersRes = await folderService.getAllFolders();
 
       setImages(imagesRes.data);
       setAllFolders(allFoldersRes.data);
@@ -63,17 +71,17 @@ const FolderView = () => {
     } catch (err) { 
         console.error(err); 
     } finally { 
-        setIsLoading(false); 
+        setIsInitialLoading(false);
+        setIsSearching(false);
     }
-  }, [idOrName, token, images.length]);
-
-  const filteredImages = images.filter(img => 
-    img.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  }, [idOrName, token, currentFolderId]);
 
   useEffect(() => { 
-      fetchData(); 
-  }, [fetchData]);
+    const delayDebounceFn = setTimeout(() => {
+      fetchData(searchQuery);
+    }, 500);
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery, fetchData]);
 
 
   const handleUpload = async (file) => {
@@ -87,7 +95,6 @@ const FolderView = () => {
     }
   };
 
-  
   const confirmDelete = async () => {
     if (!deleteId) return;
     try {
@@ -121,7 +128,6 @@ const FolderView = () => {
       } else {
         await imageService.moveImage(transferData.imageId, transferData.targetFolderId);
         setStatusModal({ isOpen: true, type: 'success', message: 'Image Moved!' });
-        
         if (transferData.targetFolderId !== currentFolderId) {
           setImages(prev => prev.filter(img => img._id !== transferData.imageId));
         }
@@ -134,8 +140,9 @@ const FolderView = () => {
     }
   };
 
-  if (isLoading) return <div className="loader-container"><div className="spinner"></div></div>;
-  
+  if (isInitialLoading) {
+      return <div className="loader-container"><div className="spinner"></div></div>;
+  }
 
   return (
     <div className="app-container">
@@ -153,30 +160,37 @@ const FolderView = () => {
 
       <UploadButton onUpload={handleUpload} />
 
-      <div className="grid-container">
-        {filteredImages.map(img => (
-          <ImageCard 
-            key={img._id} 
-            img={img} 
-            onView={setViewImage}
-            onRename={(image) => setRenameData({ isOpen: true, id: image._id, name: image.name })}
-            onDelete={setDeleteId}
-            onCopy={(id) => setTransferData({ isOpen: true, mode: 'copy', imageId: id, targetFolderId: currentFolderId })}
-            onMove={(id) => setTransferData({ isOpen: true, mode: 'move', imageId: id, targetFolderId: '' })}
-            onContextMenu={(e) => handleContextMenu(e, img)}
-          />
-        ))}
-        {images.length === 0 && (
-            <div style={{color:'#777', fontStyle:'italic', marginTop:'20px'}}>
-                This folder is empty. Upload an image to get started.
-            </div>
-        )}
-        {filteredImages.length === 0 && searchQuery && (
-             <p style={{ color: 'var(--text-secondary)', gridColumn: '1/-1', textAlign: 'center' }}>
-                No files found matching "{searchQuery}"
-            </p>
-        )}
-      </div>
+      {isSearching ? (
+         <div className="loader-container" style={{height: '200px'}}>
+             <div className="spinner"></div>
+         </div>
+      ) : (
+        <div className="grid-container">
+          {images.map(img => (
+            <ImageCard 
+              key={img._id} 
+              img={img} 
+              onView={setViewImage}
+              onRename={(image) => setRenameData({ isOpen: true, id: image._id, name: image.name })}
+              onDelete={setDeleteId}
+              onCopy={(id) => setTransferData({ isOpen: true, mode: 'copy', imageId: id, targetFolderId: currentFolderId })}
+              onMove={(id) => setTransferData({ isOpen: true, mode: 'move', imageId: id, targetFolderId: '' })}
+              onContextMenu={(e) => handleContextMenu(e, img)}
+            />
+          ))}
+          
+          {images.length === 0 && !searchQuery && (
+              <div style={{color:'#777', fontStyle:'italic', marginTop:'20px'}}>
+                  This folder is empty. Upload an image to get started.
+              </div>
+          )}
+          {images.length === 0 && searchQuery && (
+               <p style={{ color: 'var(--text-secondary)', gridColumn: '1/-1', textAlign: 'center' }}>
+                  No files found matching "{searchQuery}"
+              </p>
+          )}
+        </div>
+      )}
 
       {contextMenu.visible && (
         <ContextMenu 
@@ -237,7 +251,7 @@ const FolderView = () => {
       {viewImage && (
         <Lightbox 
           currentImage={viewImage}
-          images={filteredImages}
+          images={images}
           onClose={() => setViewImage(null)}
           onSetImage={setViewImage}
         />

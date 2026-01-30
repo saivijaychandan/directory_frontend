@@ -5,6 +5,9 @@ const imageService = {
     const config = token ? { headers: { Authorization: token } } : {};
     return api.get(`/folders/${folderId}/images`, config);
   },
+  searchImages: (folderId, query) => {
+    return api.get(`/images/search?folderId=${folderId}&fileName=${query}`);
+  },
 
   uploadImage: (folderId, file, token) => {
     const formData = new FormData();

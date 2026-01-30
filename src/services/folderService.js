@@ -1,13 +1,12 @@
 import api from '../api';
 
 const folderService = {
-  getAllFolders: (token) => {
-    const config = token ? { headers: { Authorization: token } } : {};
-    return api.get('/folders', config);
+  getAllFolders: () => {
+    return api.get('/folders');
   },
 
-  getFolderByName: (folderName) => {
-    return api.get(`/folders/${folderName}`);
+  searchFolder: (query) => {
+    return api.get(`/folders/search?folderName=${encodeURIComponent(query)}`);
   },
 
   getFolderDetails: (idOrName) => {

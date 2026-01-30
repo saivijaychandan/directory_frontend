@@ -14,7 +14,6 @@ import ProfileModal from '../components/ProfileModal';
 const Dashboard = () => {
 
   const { theme, toggleTheme } = useThemeStore();
-  const token = useAuthStore((state) => state.token);
   const logout = useAuthStore((state) => state.logout);
   const user = useAuthStore((state) => state.user);
   const themeReset = useThemeStore((state) => state.themeReset);
@@ -53,24 +52,31 @@ const Dashboard = () => {
     });
   };
 
-  const fetchFolders = useCallback(async () => {
+  const fetchFolders = useCallback(async (query = '') => {
+    setIsLoading(true);
     try {
-      const res = await folderService.getAllFolders(token);
+      let res;
+      if (query.trim()) {
+        res = await folderService.searchFolder(query); 
+      } else {
+        res = await folderService.getAllFolders(); 
+      }
       setFolders(res.data);
     } catch (err) { 
       console.error("Failed to load folders");
     } finally {
       setIsLoading(false);
     }
-  }, [token]);
+  }, []);
 
   useEffect(() => {
-    if (token) {
-        fetchFolders();
-    } else {
-      setIsLoading(false);
-    }
-  }, [token, fetchFolders]);
+    const delayDebounceFn = setTimeout(() => {
+      fetchFolders(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+    
+  }, [searchQuery, fetchFolders]);
 
   const handleCreate = async () => {
     if (!newFolderName) return;
@@ -108,17 +114,9 @@ const Dashboard = () => {
     } catch (err) { alert("Error deleting"); }
   };
 
-  const filteredFolders = folders.filter(folder => 
-    folder.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  if (isLoading) {
-    return (
-      <div className="loader-container">
-        <div className="spinner"></div>
-      </div>
-    );
-  }
+  // const filteredFolders = folders.filter(folder => 
+  //   folder.name.toLowerCase().includes(searchQuery.toLowerCase())
+  // );
 
   return (
     <div className="app-container">
@@ -183,32 +181,28 @@ const Dashboard = () => {
         <button className="primary" onClick={() => setCreateModalOpen(true)}>+ Create Folder</button>
       </div>
 
-      <div className="grid-container">
-        {filteredFolders.map(folder => (
-          <Link 
-            to={`/folder/${folder.name}`} 
-            key={folder._id} 
-            style={{ textDecoration: 'none' }}
-          > 
-            <div 
-              className="folder-item" 
-              onContextMenu={(e) => handleContextMenu(e, folder)}
-              onClick={(e) => {
-                 if (contextMenu.visible) e.preventDefault();
-              }}
-            > 
-              <img src={FOLDER_ICON_URL} alt="folder" className="folder-icon-img" style={{width:90}}/>
-              <div className="folder-item-text">{folder.name}</div>
-            </div>
-          </Link>
-        ))}
+      {isLoading ? (
+        <div className="loader-container" style={{ minHeight: '200px' }}>
+           <div className="spinner"></div>
+        </div>
+      ) : (
+        <div className="grid-container">
+          {folders.map(folder => (
+             <Link to={`/folder/${folder.name}`} key={folder._id} style={{ textDecoration: 'none' }}>
+                <div className="folder-item" onContextMenu={(e) => handleContextMenu(e, folder)}> 
+                  <img src={FOLDER_ICON_URL} alt="folder" className="folder-icon-img" style={{width:90}}/>
+                  <div className="folder-item-text">{folder.name}</div>
+                </div>
+             </Link>
+          ))}
 
-        {filteredFolders.length === 0 && searchQuery && (
-            <p style={{ color: 'var(--text-secondary)', gridColumn: '1/-1', textAlign: 'center' }}>
+          {folders.length === 0 && searchQuery && (
+             <p style={{ color: 'var(--text-secondary)', gridColumn: '1/-1', textAlign: 'center' }}>
                 No folders found matching "{searchQuery}"
-            </p>
-        )}  
-      </div>
+             </p>
+          )}  
+        </div>
+      )}
 
       {contextMenu.visible && (
         <ContextMenu 
